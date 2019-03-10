@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Echarts plugin to support AMap</title>
+</head>
+<style media="screen">
+  html,
+  body,
+  #map {
+    margin: 0;
+    padding: 0;
+    height: 1080px;
+    width: 1920px;
+    position: absolute;
+  }
+  .header {
+    position: absolute;
+    width: 100%;
+    height: 120px;
+    top: 0;
+    left: 0;
+    text-align: center;
+    font-family: "微软雅黑";
+    font-size: 40px;
+    line-height: 90px;
+    font-weight: 600;
+    color: #D9EBFF;
+    text-shadow: 0 0 10px #D9EBFF;
+    background: url(assets/logo.png) no-repeat 2% 80%;
+  }
+  .top {
+    position: absolute;
+    width: 1660px;
+    height: 100px;
+    top: 0;
+    left: 130px;
+    background: url(assets/border-top.png) no-repeat 100% 100%;
+  }
+  .right {
+    position: absolute;
+    width: 130px;
+    height: 1080px;
+    top: 0;
+    right: 0px;
+    background: url(assets/border-right.png) no-repeat 100% 100%;
+  }
+  .bottom {
+    position: absolute;
+    width: 1660px;
+    height: 100px;
+    bottom: 0;
+    left: 130px;
+    background: url(assets/border-bottom.png) no-repeat 100% 100%;
+  }
+  .left {
+    position: absolute;
+    width: 130px;
+    height: 1080px;
+    top: 0;
+    left: 0;
+    background: url(assets/border-left.png) no-repeat 100% 100%;
+  }
+  .amap-ui-infowin {
+    background: rgba(13, 22, 29, .8);
+  }
+  .amap-ui-infowin .place_name {
+    color: #fff;
+  }
+</style>
+
+<body>
+  <div id="map"></div>
+  <div class="top"></div>
+  <div class="right"></div>
+  <div class="bottom"></div>
+  <div class="left"></div>
+  <div class="header">上海黄浦区公共网络检测系统</div>
+  <script id="my-infowin" type="text/template">
+    <div class="amap-ui-infowin">
+      <div class="place_name"></div>
+    </div>
+  </script>
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+  <!--引入高德地图JSAPI -->
+  <script src="http://webapi.amap.com/maps?v=1.4.5&key=691de0fec54875b3de33f29c8626ffc9&plugin=AMap.CustomLayer"></script>
+  <!--引入UI组件库（1.0版本） -->
+  <script src="http://webapi.amap.com/ui/1.0/main.js"></script>
+
+  <script src="http://cdn.bootcss.com/echarts/4.0.4/echarts.js"></script>
+  <script src="lib/GDDT/echarts-amap.min.js"></script>
+  <script src="lib/GDDT/three.js"></script>
+  <script src=".lib/GDDT/MTLLoader.js"></script>
+  <script src="lib/GDDT/LoaderSupport.js"></script>
+  <script src="lib/GDDT/OBJLoader2.js"></script>
+  
+
+  <script type="text/javascript">
+    //该百度坐标转高德坐标算法来源于互联网
+    //your code
+    var x_PI = 3.14159265358979324 * 3000.0 / 180.0;
+    var PI = 3.1415926535897932384626;
+    var a = 6378245.0;
+    var ee = 0.00669342162296594323;
+    
+    function bd09Togcj02(bd_lng, bd_lat) {
+      var x = bd_lng - 0.0065;
+      var y = bd_lat - 0.006;
+      var z = Math.sqrt(x * x + y * y) - 0.00002 * Math.sin(y * x_PI);
+      var theta = Math.atan2(y, x) - 0.000003 * Math.cos(x * x_PI);
+      var gg_lng = z * Math.cos(theta);
+      var gg_lat = z * Math.sin(theta);
+      return [gg_lng, gg_lat];
+    }
+    //     if (!flag) return;
+    var linedata = [{
+      "fromName": "南京东路",
+      "coords": [
+        bd09Togcj02(121.49692, 31.248377),
+        bd09Togcj02(121.497055, 31.246907),
+        bd09Togcj02(121.497019, 31.24634),
+        bd09Togcj02(121.496952, 31.245907),
+        bd09Togcj02(121.496808, 31.244854),
+        bd09Togcj02(121.496808, 31.244854),
+        bd09Togcj02(121.496871, 31.2436),
+        bd09Togcj02(121.496997, 31.243079),
+        bd09Togcj02(121.497149, 31.242152),
+        bd09Togcj02(121.497131, 31.241458),
+        bd09Togcj02(121.497639, 31.24052),
+        bd09Togcj02(121.499067, 31.238509),
+        bd09Togcj02(121.500832, 31.236815),
+        bd09Togcj02(121.502032, 31.235695),
+        bd09Togcj02(121.506802, 31.231292),
+        bd09Togcj02(121.510911, 31.228119)
+      ]
+    }];
+    var echart = echarts.init(document.getElementById('map'));
+    echart.setOption({
+      amap: {
+        pitch: 60,
+        // viewMode: '3D',
+        zoom: 17,
+        expandZoomRange: true,
+        zooms: [3, 20],
+        mapStyle: 'amap://styles/6bd7d0c78736ef803efcbda2d85f89a5',
+        center: bd09Togcj02(121.495144, 31.242306),
+        rotation: 100
+      },
+      // animation: false,
+      tooltip: {
+        trigger: 'item',
+      },
+      toolbox: {
+        itemSize: 25,
+        right: '80px',
+        top: '170px',
+        iconStyle: {
+          normal: {
+            borderColor: '#fff'
+          },
+          emphasis: {
+            borderColor: '#b1e4ff'
+          }
+        },
+        feature: {
+          brush: {
+            type: ['rect', 'polygon', 'clear']
+          },
+        }
+      },
+      brush: {
+        toolbox: ['rect', 'polygon', 'clear'],
+        ouyOfBrush: {
+          color: '#ffff00'
+        },
+        brushStyle: {
+          borderWidth: 2,
+          color: 'rgba(0,0,0,0.2)',
+          borderColor: 'rgba(0,0,0,0.5)',
+        },
+        seriesIndex: [0, 1],
+        throttleType: 'debounce',
+        throttleDelay: 300,
+        geoIndex: 'all',
+      },
+      series: [{
+        name: "line1",
+        type: 'lines',
+        coordinateSystem: 'amap',
+        polyline: true,
+        data: linedata,
+        silent: true,
+        lineStyle: {
+          normal: {
+            color: 'rgba(0, 255, 0,0.8)',
+            opacity: 0.2,
+            width: 3
+          }
+        },
+        progressiveThreshold: 500,
+        progressive: 200,
+        zlevel: 2
+      }, {
+        name: 'line2',
+        type: 'lines',
+        coordinateSystem: 'amap',
+        polyline: true,
+        data: linedata,
+        lineStyle: {
+          normal: {
+            color: 'rgba(255, 255, 0,1)',
+            width: 0.02
+          }
+        },
+        tooltip: {
+          show: false,
+        },
+        effect: {
+          constantSpeed: 20,
+          show: true,
+          trailLength: 0.2,
+          symbolSize: 3
+        },
+        zlevel: 1
+      }]
+    });
+    var map = echart.getModel().getComponent('amap').getAMap();
+    var layer = echart.getModel().getComponent('amap').getLayer();
+    // AMapUI.defineTpl("ui/overlay/SimpleInfoWindow/tpl/container.html", [], function () {
+    //   return document.getElementById("my-infowin").innerHTML;
+    // });
+    AMapUI.loadUI(['overlay/SimpleMarker', 'overlay/SimpleInfoWindow'], function (SimpleMarker, SimpleInfoWindow) {
+      $.getJSON('./assets/scatter-place.json', function (result) {
+        $(result).each(function (idx, ele) {
+          if (idx > 100 || !ele.value[0] || !ele.value[1]) return;
+          var marker = new SimpleMarker({
+            iconStyle: {
+              src: idx % 3 ? './assets/circlel.svg' : idx % 2 ? './assets/policehat.png' : './assets/policestation.png',
+              style: {
+                width: '20px',
+                height: '20px'
+              }
+            },
+            offset: new AMap.Pixel(-10, -10),
+            map: map,
+            showPositionPoint: false,
+            position: bd09Togcj02(ele.value[0], ele.value[1])
+          });
+          var infoWindow = new SimpleInfoWindow({
+            myCustomHeader: '',
+            myCustomFooter: '',
+            infoTitle: '',
+            infoBody: ele.name,
+            offset: new AMap.Pixel(0, -31)
+          });
+          function openInfoWin() {
+            infoWindow.open(map, marker.getPosition());
+          }
+          AMap.event.addListener(marker, 'mouseover', function () {
+            openInfoWin();
+          });
+        });
+      });
+    });
+    map.plugin(["AMap.ControlBar"], function () {
+      var controlBar = new AMap.ControlBar({
+        position: {
+          top: '70px',
+          right: '80px'
+        },
+        showZoomBar: false,
+      });
+      map.addControl(controlBar);
+    });
+    var polygonArr = []; //多边形覆盖物节点坐标数组
+    polygonArr.push(bd09Togcj02(121.502722, 31.235849));
+    polygonArr.push(bd09Togcj02(121.49381, 31.234645));
+    polygonArr.push(bd09Togcj02(121.489678, 31.247489));
+    polygonArr.push(bd09Togcj02(121.492265, 31.249311));
+    polygonArr.push(bd09Togcj02(121.494313, 31.249496));
+    polygonArr.push(bd09Togcj02(121.497871, 31.248385));
+    polygonArr.push(bd09Togcj02(121.498625, 31.242302));
+    polygonArr.push(bd09Togcj02(121.499021, 31.239277));
+    var polygon = new AMap.Polygon({
+      path: polygonArr, //设置多边形边界路径
+      strokeColor: "#FF33FF", //线颜色
+      strokeOpacity: 0.2, //线透明度
+      strokeWeight: 5, //线宽
+      fillColor: "#1791fc", //填充色
+      fillOpacity: 0.15 //填充透明度
+    });
+    polygon.setMap(map);
+    /*
+     * 添加Canvas图层
+     */
+    //加载canvas图层(canvasLayer)
+    var canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 200;
+    var context = canvas.getContext('2d')
+    context.fillStyle = 'rgb(255,255,0)';
+    context.globalAlpha = 1;
+    var radious = 0;
+    var draw = function (argument) {
+      context.clearRect(0, 0, 200, 200)
+      context.globalAlpha = (context.globalAlpha - 0.01 + 1) % 1;
+      radious = (radious + 1) % 100;
+      context.beginPath();
+      context.arc(100, 100, radious, 0, 2 * Math.PI);
+      context.fill();
+      context.stroke();
+      CanvasLayer.reFresh(); //2D视图时可以省略
+      AMap.Util.requestAnimFrame(draw);
+    }
+    var CanvasLayer = new AMap.CanvasLayer({
+      canvas: canvas,
+      bounds: new AMap.Bounds(
+        bd09Togcj02(121.496829, 31.242441), bd09Togcj02(121.498509, 31.243136)
+      ),
+      //"lng":"121.49468","place_code":"31010121000173","addr":"上海市黄浦区南京东路98号","lat":"31.244469"
+      zooms: [3, 18],
+    });
+    CanvasLayer.setMap(map);
+    draw();
+    //加载3d模型
+    map.AmbientLight = new AMap.Lights.AmbientLight([1, 1, 1], 0.5);
+    map.DirectionLight = new AMap.Lights.DirectionLight([1, 0, -0.5], [1, 1, 1], 0.5);
+    var loadModel = function () {
+      var modelName = 'building';
+      var scope = this;
+      var objLoader = new THREE.OBJLoader2();
+      var callbackOnLoad = function (event) {
+        var object3Dlayer = new AMap.Object3DLayer();
+        var meshes = event.detail.loaderRootNode.children;
+        for (var i = 0; i < meshes.length; i++) {
+          var vecticesF3 = meshes[i].geometry.attributes.position;
+          var vecticesNormal3 = meshes[i].geometry.attributes.normal;
+          var vecticesUV2 = meshes[i].geometry.attributes.uv;
+          var vectexCount = vecticesF3.count;
+          var mesh = new AMap.Object3D.MeshAcceptLights();
+          var geometry = mesh.geometry;
+          //底部一圈
+          var c, opacity;
+          var material = meshes[i].material[0] || meshes[i].material;
+          if (material.map) {
+            mesh.textures.push('./assets/model/1519.bmp')
+          }
+          c = material.color;
+          opacity = material.opacity
+          for (var j = 0; j < vectexCount; j += 1) {
+            var s = j * 3;
+            geometry.vertices.push(vecticesF3.array[s], vecticesF3.array[s + 2], -vecticesF3.array[s + 1]);
+            if (vecticesNormal3) {
+              geometry.vertexNormals.push(vecticesNormal3.array[s], vecticesNormal3.array[s + 2], -vecticesNormal3.array[
+                s + 1]);
+            }
+            if (vecticesUV2) {
+              geometry.vertexUVs.push(vecticesUV2.array[j * 2], 1 - vecticesUV2.array[j * 2 + 1]);
+            }
+            geometry.vertexColors.push(c.r, c.g, c.b, opacity)
+          }
+          // debugger
+          mesh.DEPTH_TEST = material.depthTest
+          // mesh.backOrFront = 'both'
+          var modelCenter = bd09Togcj02(121.497368, 31.244807);
+          mesh.transparent = opacity < 1;
+          mesh.scale(7, 7, 7);
+          mesh.rotateZ(90);
+          mesh.position(new AMap.LngLat(modelCenter[0], modelCenter[1]));
+          object3Dlayer.add(mesh);
+        }
+        map.add(object3Dlayer);
+      };
+      var onLoadMtl = function (materials) {
+        // for(var i=0;i<materials.length;i+=1){
+        //  materials[i].side=2;
+        // }
+        objLoader.setModelName(modelName);
+        objLoader.setMaterials(materials);
+        objLoader.load('./assets/model/1234.v2.obj', callbackOnLoad, null,
+          null, null, false);
+      };
+      objLoader.loadMtl('./assets/model/1234.v2.mtl', null, onLoadMtl);
+    };
+    loadModel();
+    layer.setzIndex(200);
+    // map.setStatus({dragEnable:false});
+  </script>
+</body>
+
+</html>
